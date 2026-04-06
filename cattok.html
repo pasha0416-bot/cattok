@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatTok — Видео для TikTok</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{--primary:#FF0050;--secondary:#00F2EA;--dark:#2D3436;--light:#F8F9FA}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Nunito',sans-serif;background:var(--light);color:var(--dark)}
+        header{background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:1000;box-shadow:0 4px 30px rgba(0,0,0,0.1)}
+        nav{max-width:1400px;margin:0 auto;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+        .logo{display:flex;align-items:center;gap:0.5rem;font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--secondary),var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer}
+        .api-status{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:#f0f0f0;border-radius:50px;font-size:0.9rem;cursor:pointer}
+        .api-status.connected{background:#d4edda;color:#155724}
+        .hero{text-align:center;padding:4rem 2rem;max-width:800px;margin:0 auto}
+        .hero h1{font-size:3rem;font-weight:800;margin-bottom:1rem;background:linear-gradient(135deg,var(--secondary),var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero p{font-size:1.2rem;color:#666;margin-bottom:2rem}
+        .search-box{display:flex;max-width:600px;margin:0 auto 1rem;background:white;border-radius:50px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.1)}
+        .search-box input{flex:1;border:none;padding:1.2rem 2rem;font-size:1.1rem;outline:none;font-family:'Nunito',sans-serif}
+        .search-box button{background:linear-gradient(135deg,var(--secondary),var(--primary));border:none;color:white;padding:0 2rem;cursor:pointer;font-size:1.2rem}
+        .categories{display:flex;justify-content:center;gap:1rem;padding:2rem;flex-wrap:wrap}
+        .category-chip{background:white;padding:0.6rem 1.5rem;border-radius:50px;font-weight:600;cursor:pointer;transition:all 0.3s;border:2px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+        .category-chip:hover,.category-chip.active{background:linear-gradient(135deg,var(--secondary),var(--primary));color:white;border-color:var(--primary);transform:translateY(-2px)}
+        .container{max-width:1400px;margin:0 auto;padding:2rem}
+        .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+        .section-title{font-size:2rem;display:flex;align-items:center;gap:0.5rem}
+        .results-counter{font-size:0.9rem;color:#666;margin-left:1rem}
+        .video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem}
+        .video-card{background:white;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.1);transition:all 0.3s;cursor:pointer;position:relative}
+        .video-card:hover{transform:translateY(-10px);box-shadow:0 20px 50px rgba(0,0,0,0.15)}
+        .video-thumbnail{position:relative;aspect-ratio:9/16;background:linear-gradient(135deg,var(--secondary),var(--primary));overflow:hidden}
+        .video-thumbnail img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s}
+        .video-card:hover .video-thumbnail img{transform:scale(1.1)}
+        .play-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;background:rgba(255,255,255,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--primary);opacity:0;transition:all 0.3s}
+        .video-card:hover .play-overlay{opacity:1}
+        .tiktok-badge{position:absolute;top:10px;left:10px;background:linear-gradient(135deg,var(--secondary),var(--primary));color:white;padding:0.3rem 0.6rem;border-radius:5px;font-size:0.7rem;font-weight:700}
+        .duration{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.8);color:white;padding:0.3rem 0.6rem;border-radius:5px;font-size:0.8rem;font-weight:700}
+        .download-btn{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.95);color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;opacity:0;transition:all 0.3s}
+        .video-card:hover .download-btn{opacity:1}
+        .download-btn:hover{background:var(--primary);color:white;transform:scale(1.1)}
+        .video-info{padding:1.2rem}
+        .video-title{font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .video-meta{display:flex;justify-content:space-between;align-items:center;color:#666;font-size:0.9rem}
+        .author{display:flex;align-items:center;gap:0.5rem}
+        .author-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#FF0000,#CC0000);display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem}
+        .stats{display:flex;gap:1rem}
+        .stat{display:flex;align-items:center;gap:0.3rem}
+        .stat i{color:var(--primary)}
+        .loading{display:flex;justify-content:center;padding:3rem;flex-direction:column;align-items:center}
+        .cat-loader{font-size:3rem;animation:bounce 1s infinite}
+        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+        .modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;display:flex;align-items:center;justify-content:center}
+        .modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(5px)}
+        .modal-content{position:relative;background:white;border-radius:20px;max-width:500px;width:90%;padding:2rem;z-index:10001;animation:modalSlide 0.3s ease}
+        @keyframes modalSlide{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .modal-close{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.5);color:white;border:none;width:40px;height:40px;border-radius:50%;font-size:1.5rem;cursor:pointer;transition:all 0.3s}
+        .modal-close:hover{background:rgba(0,0,0,0.8);transform:rotate(90deg)}
+        .api-input{width:100%;padding:0.8rem;margin:1rem 0;border:2px solid #ddd;border-radius:10px;font-family:'Nunito',sans-serif;font-size:1rem;outline:none}
+        .api-input:focus{border-color:var(--primary)}
+        .api-error{color:#ff4757;margin-bottom:1rem;display:none;font-weight:600}
+        .save-btn{background:linear-gradient(135deg,var(--secondary),var(--primary));color:white;border:none;padding:0.8rem 2rem;border-radius:50px;font-weight:700;cursor:pointer;width:100%;transition:all 0.3s}
+        .save-btn:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(255,0,80,0.4)}
+        .save-btn:disabled{opacity:0.6;cursor:not-allowed}
+        .download-options{display:flex;flex-direction:column;gap:1rem;margin:1.5rem 0}
+        .download-option{padding:1rem;border:2px solid #eee;border-radius:15px;cursor:pointer;transition:all 0.3s;text-align:center;text-decoration:none;color:inherit}
+        .download-option:hover{border-color:var(--primary);background:rgba(255,0,80,0.05)}
+        .download-option i{font-size:2rem;color:var(--primary);margin-bottom:0.5rem}
+        .download-option h4{margin-bottom:0.3rem}
+        .download-option p{font-size:0.85rem;color:#666}
+        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:1rem 2rem;border-radius:50px;color:white;font-weight:600;z-index:10002;animation:toastSlide 0.3s ease;display:flex;align-items:center;gap:0.5rem}
+        .toast.error{background:#ff4757}
+        .toast.success{background:#2ed573}
+        @keyframes toastSlide{from{transform:translateX(-50%)translateY(100px);opacity:0}to{transform:translateX(-50%)translateY(0);opacity:1}}
+        footer{background:var(--dark);color:white;padding:3rem 2rem;margin-top:4rem;text-align:center}
+        .footer-content{max-width:800px;margin:0 auto}
+        .social-links{display:flex;justify-content:center;gap:2rem;margin:2rem 0}
+        .social-links a{width:50px;height:50px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.3rem;transition:all 0.3s}
+        .social-links a:hover{background:linear-gradient(135deg,var(--secondary),var(--primary));transform:translateY(-5px)}
+        @media(max-width:768px){.hero h1{font-size:2rem}.video-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}.download-btn{opacity:1}}
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-cat"></i><span>CatTok</span></div>
+            <div class="api-status" id="apiStatus" onclick="app.showApiKeyModal()"><i class="fas fa-circle"></i><span>API: не подключен</span></div>
+        </nav>
+    </header>
+    <section class="hero">
+        <h1>🐱 Видео для TikTok</h1>
+        <p>Находи лучшие видео с котами и скачивай!</p>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск видео с котами...">
+            <button id="searchBtn"><i class="fas fa-search"></i></button>
+        </div>
+    </section>
+    <div class="categories">
+        <div class="category-chip active" data-category="all">🔥 Все</div>
+        <div class="category-chip" data-category="funny">😹 Смешные</div>
+        <div class="category-chip" data-category="cute">😻 Милые</div>
+        <div class="category-chip" data-category="meme">🙀 Мемы</div>
+    </div>
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title"><span>🔥</span><span id="sectionTitle">Трендовое</span><span class="results-counter" id="resultsCounter"></span></h2>
+        </div>
+        <div class="video-grid" id="videoGrid">
+            <div class="loading"><div class="cat-loader">🐱</div><p>Введи API ключ</p></div>
+        </div>
+        <div id="infinite-scroll-trigger" style="display:none;height:50px;margin:20px 0"></div>
+    </div>
+    <footer>
+        <div class="footer-content">
+            <h2>CatTok</h2>
+            <p>Скачивай видео с котами для TikTok</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-tiktok"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p>&copy; 2026 CatTok. Мяу! 🐾</p>
+        </div>
+    </footer>
+    <script>
+        class CatTokAPI{
+            constructor(){this.apiKey=localStorage.getItem('yt_api_key')||'';this.baseURL='https://www.googleapis.com/youtube/v3';this.nextPageToken=null}
+            async setApiKey(key){this.apiKey=key;localStorage.setItem('yt_api_key',key);try{const r=await fetch(`${this.baseURL}/videos?part=snippet&chart=mostPopular&maxResults=1&key=${key}`);if(!r.ok)throw new Error('Invalid key');return{valid:true}}catch(e){return{valid:false,message:e.message}}}
+            async searchCats(options={}){const{q='funny cats',max=12,order='relevance',page=null,cat='all'}=options;if(!this.apiKey)throw new Error('No API key');const cats={all:'',funny:'funny cats compilation',cute:'cute kittens adorable',meme:'cat meme viral'};const query=cats[cat]?`${cats[cat]} ${q}`:q;const params=new URLSearchParams({part:'snippet',q:query,type:'video',videoDuration:'short',maxResults:max,order,key:this.apiKey,videoEmbeddable:'true'});if(page)params.append('pageToken',page);const r=await fetch(`${this.baseURL}/search?${params}`);if(!r.ok)throw new Error('Search failed');const d=await r.json();this.nextPageToken=d.nextPageToken||null;const ids=d.items.map(i=>i.id.videoId).join(',');const stats=await this.getStats(ids);const videos=d.items.map((item,i)=>({id:item.id.videoId,title:item.snippet.title,thumbnail:item.snippet.thumbnails.high?.url||item.snippet.thumbnails.medium?.url,channel:item.snippet.channelTitle,views:stats[i]?this.fmt(stats[i].statistics.viewCount):'0',likes:stats[i]?this.fmt(stats[i].statistics.likeCount):'0',duration:stats[i]?this.parseDur(stats[i].contentDetails.duration):'0:00',url:`https://youtube.com/watch?v=${item.id.videoId}`}));return{videos,nextPage:this.nextPageToken,total:d.pageInfo?.totalResults||0}}
+            async getStats(ids){if(!ids)return[];const p=new URLSearchParams({part:'statistics,contentDetails',id:ids,key:this.apiKey});const r=await fetch(`${this.baseURL}/videos?${p}`);if(!r.ok)return[];const d=await r.json();return d.items||[]}
+            parseDur(iso){if(!iso)return'0:00';const m=iso.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);if(!m)return'0:00';const h=parseInt(m[1]||0),mn=parseInt(m[2]||0),s=parseInt(m[3]||0);if(h>0)return`${h}:${mn.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;return`${mn}:${s.toString().padStart(2,'0')}`}
+            fmt(n){if(!n)return'0';const num=parseInt(n);if(num>=1000000)return(num/1000000).toFixed(1)+'M';if(num>=1000)return(num/1000).toFixed(1)+'K';return num.toString()}
+        }
+        class CatTokApp{
+            constructor(){this.api=new CatTokAPI();this.isLoading=false;this.currentPage=null;this.currentCat='all';this.searchQ='';this.init()}
+            init(){this.setupEvents();this.checkApiKey();this.setupInfiniteScroll()}
+            setupEvents(){document.querySelectorAll('.category-chip').forEach(c=>c.addEventListener('click',e=>this.handleCat(e.target.dataset.category,e.target)));const searchInput=document.getElementById('searchInput');let t;searchInput.addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>this.handleSearch(e.target.value),600)});document.getElementById('searchBtn').addEventListener('click',()=>this.handleSearch(searchInput.value))}
+            async checkApiKey(){const saved=localStorage.getItem('yt_api_key');if(!saved){this.showApiModal()}else{const r=await this.api.setApiKey(saved);if(r.valid){this.updateStatus(true);this.loadVideos()}else{this.showApiModal()}}}
+            updateStatus(ok){const s=document.getElementById('apiStatus');if(ok){s.classList.add('connected');s.innerHTML='<i class="fas fa-check-circle"></i><span>API: OK</span>'}}
+            showApiModal(){if(document.querySelector('.modal'))return;const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="modal-overlay" onclick="this.parentElement.remove()"></div><div class="modal-content"><button class="modal-close" onclick="this.closest(\'.modal\').remove()">×</button><h2>🔑 YouTube API Key</h2><ol style="text-align:left;margin:1rem 0;padding-left:1.5rem"><li>Перейди на <a href="https://console.cloud.google.com" target="_blank">Google Cloud</a></li><li>Создай проект, включи <b>YouTube Data API v3</b></li><li>Создай API ключ в Credentials</li><li>Вставь ключ ниже:</li></ol><input type="text" class="api-input" id="apiInput" placeholder="API ключ..."><div class="api-error" id="apiError"></div><button class="save-btn" id="saveBtn"><i class="fas fa-check"></i> Сохранить</button><p style="margin-top:1rem;font-size:0.9rem;color:#666">🔒 Ключ хранится локально</p></div>';document.body.appendChild(m);document.getElementById('saveBtn').addEventListener('click',async()=>{const i=document.getElementById('apiInput'),e=document.getElementById('apiError'),b=document.getElementById('saveBtn');const k=i.value.trim();if(!k){e.textContent='Введи ключ';e.style.display='block';return}e.style.display='none';b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';const r=await this.api.setApiKey(k);if(r.valid){m.remove();this.updateStatus(true);this.showToast('API ключ сохранен!','success');this.loadVideos()}else{e.textContent=r.message||'Ошибка ключа';e.style.display='block';b.disabled=false;b.innerHTML='<i class="fas fa-check"></i> Сохранить'}})}
+            handleCat(cat,el){document.querySelectorAll('.category-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');this.currentCat=cat;this.resetLoad()}
+            handleSearch(q){this.searchQ=q;this.resetLoad()}
+            resetLoad(){this.currentPage=null;document.getElementById('videoGrid').innerHTML='';this.loadVideos()}
+            async loadVideos(){if(this.isLoading)return;this.isLoading=true;try{const r=await this.api.searchCats({q:this.searchQ||undefined,cat:this.currentCat,page:this.currentPage,max:12});this.renderVideos(r.videos);this.currentPage=r.nextPage;document.getElementById('infinite-scroll-trigger').style.display=r.nextPage?'block':'none';if(r.total){document.getElementById('resultsCounter').textContent=`(${this.fmt(r.total)} результатов)`}}catch(e){this.showToast(e.message,'error')}finally{this.isLoading=false}}
+            renderVideos(videos){const g=document.getElementById('videoGrid');if(g.querySelector('.loading'))g.innerHTML='';videos.forEach(v=>{const c=document.createElement('div');c.className='video-card';c.innerHTML=`<div class="video-thumbnail"><img src="${v.thumbnail}" alt="${v.title}" loading="lazy"><div class="play-overlay"><i class="fas fa-play"></i></div><div class="tiktok-badge"><i class="fab fa-tiktok"></i> TikTok</div><span class="duration">${v.duration}</span><button class="download-btn" onclick="event.stopPropagation();app.showDownload('${v.id}','${v.title.replace(/'/g,"\\'")}')" title="Скачать"><i class="fas fa-download"></i></button></div><div class="video-info"><h3 class="video-title">${v.title}</h3><div class="video-meta"><div class="author"><div class="author-avatar"><i class="fab fa-youtube"></i></div><span>${v.channel}</span></div><div class="stats"><span class="stat"><i class="fas fa-eye"></i> ${v.views}</span><span class="stat"><i class="fas fa-heart"></i> ${v.likes}</span></div></div></div>`;c.addEventListener('click',()=>this.showVideo(v));g.appendChild(c)})}
+            showVideo(v){const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="modal-overlay" onclick="document.body.style.overflow='';this.parentElement.remove()"></div><div class="modal-content" style="max-width:900px;padding:0;overflow:hidden"><button class="modal-close" onclick="document.body.style.overflow='';this.closest('.modal').remove()">×</button><div style="position:relative;padding-bottom:56.25%;height:0;background:#000"><iframe src="https://www.youtube.com/embed/${v.id}?autoplay=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div><div style="padding:1.5rem"><h2 style="margin-bottom:1rem">${v.title}</h2><div style="display:flex;gap:1rem;margin-bottom:1rem;color:#666;flex-wrap:wrap"><span><i class="fas fa-eye"></i> ${v.views}</span><span><i class="fas fa-heart"></i> ${v.likes}</span></div><button class="save-btn" onclick="app.showDownload('${v.id}','${v.title.replace(/'/g,"\\'")}')" style="width:auto;padding:0.8rem 1.5rem"><i class="fas fa-download"></i> Скачать для TikTok</button></div></div>`;document.body.appendChild(m);document.body.style.overflow='hidden'}
+            showDownload(id,title){const m=document.createElement('div');m.className='modal';m.style.zIndex='10003';const url=`https://youtube.com/watch?v=${id}`;m.innerHTML=`<div class="modal-overlay" onclick="this.parentElement.remove()"></div><div class="modal-content"><button class="modal-close" onclick="this.closest('.modal').remove()">×</button><h2 style="margin-bottom:1rem"><i class="fas fa-download"></i> Скачать: ${title.substring(0,50)}...</h2><p style="margin-bottom:1rem;color:#666">Выбери способ скачивания:</p><div class="download-options"><a href="https://y2mate.is/ru/${url}" target="_blank" class="download-option" style="border-color:#ff0050"><i class="fas fa-video" style="color:#ff0050"></i><h4>Y2mate.is</h4><p>HD качество, быстро</p></a><a href="https://yt1s.com/ru?q=${url}" target="_blank" class="download-option" style="border-color:#00f2ea"><i class="fas fa-compress" style="color:#00f2ea"></i><h4>YT1s.com</h4><p>До 4K, без регистрации</p></a><a href="https://ssyoutube.com/${url}" target="_blank" class="download-option" style="border-color:#ff6b9d"><i class="fas fa-bolt" style="color:#ff6b9d"></i><h4>SSYouTube</h4><p>Простой и быстрый</p></a></div><div style="margin-top:1.5rem;padding:1rem;background:#f8f9fa;border-radius:10px;font-size:0.9rem"><strong>💡 Совет:</strong> Выбери MP4 720p или 1080p для TikTok</div></div>`;document.body.appendChild(m)}
+            setupInfiniteScroll(){const t=document.getElementById('infinite-scroll-trigger');if(t){const o=new IntersectionObserver(e=>{e.forEach(i=>{if(i.isIntersecting&&!this.isLoading&&this.currentPage){this.loadVideos()}})},{rootMargin:'200px'});o.observe(t)}}
+            fmt(n){if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return n.toString()}
+            showToast(msg,type='info'){const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),type==='error'?5000:3000)}
+        }
+        document.addEventListener('DOMContentLoaded',()=>{window.app=new CatTokApp();console.log('🐱 CatTok запущен!')});
+    </script>
+</body>
+</html>
+
+
+
