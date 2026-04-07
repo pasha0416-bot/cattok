@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CatTok — Видео для TikTok</title>
+    <title>CatTok</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -86,7 +86,7 @@
     <header>
         <nav>
             <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-cat"></i><span>CatTok</span></div>
-            <div class="api-status" id="apiStatus" onclick="app.showApiKeyModal()"><i class="fas fa-circle"></i><span>API: не подключен</span></div>
+            <div class="api-status connected" id="apiStatus"><i class="fas fa-check-circle"></i><span>API: подключен</span></div>
         </nav>
     </header>
     <section class="hero">
@@ -108,7 +108,7 @@
             <h2 class="section-title"><span>🔥</span><span id="sectionTitle">Трендовое</span><span class="results-counter" id="resultsCounter"></span></h2>
         </div>
         <div class="video-grid" id="videoGrid">
-            <div class="loading"><div class="cat-loader">🐱</div><p>Введи API ключ</p></div>
+            <div class="loading"><div class="cat-loader">🐱</div><p>Загрузка...</p></div>
         </div>
         <div id="infinite-scroll-trigger" style="display:none;height:50px;margin:20px 0"></div>
     </div>
@@ -126,20 +126,17 @@
     </footer>
     <script>
         class CatTokAPI{
-            constructor(){this.apiKey='AIzaSyD20pUAMZ0eULXNX0_GO65MQjnHmM_BGyU';this.baseURL='https://www.googleapis.com/youtube/v3';this.nextPageToken=null}
+            constructor(){this.apiKey='AIzaSyD2QpUAMZ0eULXNXQ_GO65MQjnHm1_8GyU';this.baseURL='https://www.googleapis.com/youtube/v3';this.nextPageToken=null}
             async setApiKey(key){this.apiKey=key;localStorage.setItem('yt_api_key',key);try{const r=await fetch(`${this.baseURL}/videos?part=snippet&chart=mostPopular&maxResults=1&key=${key}`);if(!r.ok)throw new Error('Invalid key');return{valid:true}}catch(e){return{valid:false,message:e.message}}}
-            async searchCats(options={}){const{q='funny cats',max=12,order='relevance',page=null,cat='all'}=options;if(!this.apiKey)throw new Error('No API key');const cats={all:'',funny:'funny cats compilation',cute:'cute kittens adorable',meme:'cat meme viral'};const query=cats[cat]?`${cats[cat]} ${q}`:q;const params=new URLSearchParams({part:'snippet',q:query,type:'video',videoDuration:'short',maxResults:max,order,key:this.apiKey,videoEmbeddable:'true'});if(page)params.append('pageToken',page);const r=await fetch(`${this.baseURL}/search?${params}`);if(!r.ok)throw new Error('Search failed');const d=await r.json();this.nextPageToken=d.nextPageToken||null;const ids=d.items.map(i=>i.id.videoId).join(',');const stats=await this.getStats(ids);const videos=d.items.map((item,i)=>({id:item.id.videoId,title:item.snippet.title,thumbnail:item.snippet.thumbnails.high?.url||item.snippet.thumbnails.medium?.url,channel:item.snippet.channelTitle,views:stats[i]?this.fmt(stats[i].statistics.viewCount):'0',likes:stats[i]?this.fmt(stats[i].statistics.likeCount):'0',duration:stats[i]?this.parseDur(stats[i].contentDetails.duration):'0:00',url:`https://youtube.com/watch?v=${item.id.videoId}`}));return{videos,nextPage:this.nextPageToken,total:d.pageInfo?.totalResults||0}}
+            async searchCats(options={}){const{q='funny cats',max=12,order='relevance',page=null,cat='all'}=options;if(!this.apiKey)throw new Error('No API key');const cats={all:'',funny:'funny cats compilation',cute:'cute kittens adorable',meme:'cat meme viral'};const query=cats[cat]?`${cats[cat]} ${q}`:q;const params=new URLSearchParams({part:'snippet',q:query,type:'video',videoDuration:'short',maxResults:max,order,key:this.apiKey,videoEmbeddable:'true'});if(page)params.append('pageToken',page);const r=await fetch(`${this.baseURL}/search?${params}`);if(!r.ok)throw new Error('Ошибка поиска');const d=await r.json();this.nextPageToken=d.nextPageToken||null;const ids=d.items.map(i=>i.id.videoId).join(',');const stats=await this.getStats(ids);const videos=d.items.map((item,i)=>({id:item.id.videoId,title:item.snippet.title,thumbnail:item.snippet.thumbnails.high?.url||item.snippet.thumbnails.medium?.url,channel:item.snippet.channelTitle,views:stats[i]?this.fmt(stats[i].statistics.viewCount):'0',likes:stats[i]?this.fmt(stats[i].statistics.likeCount):'0',duration:stats[i]?this.parseDur(stats[i].contentDetails.duration):'0:00',url:`https://youtube.com/watch?v=${item.id.videoId}`}));return{videos,nextPage:this.nextPageToken,total:d.pageInfo?.totalResults||0}}
             async getStats(ids){if(!ids)return[];const p=new URLSearchParams({part:'statistics,contentDetails',id:ids,key:this.apiKey});const r=await fetch(`${this.baseURL}/videos?${p}`);if(!r.ok)return[];const d=await r.json();return d.items||[]}
             parseDur(iso){if(!iso)return'0:00';const m=iso.match(/PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?/);if(!m)return'0:00';const h=parseInt(m[1]||0),mn=parseInt(m[2]||0),s=parseInt(m[3]||0);if(h>0)return`${h}:${mn.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;return`${mn}:${s.toString().padStart(2,'0')}`}
             fmt(n){if(!n)return'0';const num=parseInt(n);if(num>=1000000)return(num/1000000).toFixed(1)+'M';if(num>=1000)return(num/1000).toFixed(1)+'K';return num.toString()}
         }
         class CatTokApp{
             constructor(){this.api=new CatTokAPI();this.isLoading=false;this.currentPage=null;this.currentCat='all';this.searchQ='';this.init()}
-            init(){this.setupEvents();this.checkApiKey();this.setupInfiniteScroll()}
+            init(){this.setupEvents();this.loadVideos();this.setupInfiniteScroll()}
             setupEvents(){document.querySelectorAll('.category-chip').forEach(c=>c.addEventListener('click',e=>this.handleCat(e.target.dataset.category,e.target)));const searchInput=document.getElementById('searchInput');let t;searchInput.addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>this.handleSearch(e.target.value),600)});document.getElementById('searchBtn').addEventListener('click',()=>this.handleSearch(searchInput.value))}
-            async checkApiKey(){const saved=localStorage.getItem('yt_api_key');if(!saved){this.showApiModal()}else{const r=await this.api.setApiKey(saved);if(r.valid){this.updateStatus(true);this.loadVideos()}else{this.showApiModal()}}}
-            updateStatus(ok){const s=document.getElementById('apiStatus');if(ok){s.classList.add('connected');s.innerHTML='<i class="fas fa-check-circle"></i><span>API: OK</span>'}}
-            showApiModal(){if(document.querySelector('.modal'))return;const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="modal-overlay" onclick="this.parentElement.remove()"></div><div class="modal-content"><button class="modal-close" onclick="this.closest(\'.modal\').remove()">×</button><h2>🔑 YouTube API Key</h2><ol style="text-align:left;margin:1rem 0;padding-left:1.5rem"><li>Перейди на <a href="https://console.cloud.google.com" target="_blank">Google Cloud</a></li><li>Создай проект, включи <b>YouTube Data API v3</b></li><li>Создай API ключ в Credentials</li><li>Вставь ключ ниже:</li></ol><input type="text" class="api-input" id="apiInput" placeholder="API ключ..."><div class="api-error" id="apiError"></div><button class="save-btn" id="saveBtn"><i class="fas fa-check"></i> Сохранить</button><p style="margin-top:1rem;font-size:0.9rem;color:#666">🔒 Ключ хранится локально</p></div>';document.body.appendChild(m);document.getElementById('saveBtn').addEventListener('click',async()=>{const i=document.getElementById('apiInput'),e=document.getElementById('apiError'),b=document.getElementById('saveBtn');const k=i.value.trim();if(!k){e.textContent='Введи ключ';e.style.display='block';return}e.style.display='none';b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i>';const r=await this.api.setApiKey(k);if(r.valid){m.remove();this.updateStatus(true);this.showToast('API ключ сохранен!','success');this.loadVideos()}else{e.textContent=r.message||'Ошибка ключа';e.style.display='block';b.disabled=false;b.innerHTML='<i class="fas fa-check"></i> Сохранить'}})}
             handleCat(cat,el){document.querySelectorAll('.category-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');this.currentCat=cat;this.resetLoad()}
             handleSearch(q){this.searchQ=q;this.resetLoad()}
             resetLoad(){this.currentPage=null;document.getElementById('videoGrid').innerHTML='';this.loadVideos()}
@@ -155,6 +152,3 @@
     </script>
 </body>
 </html>
-
-
-
